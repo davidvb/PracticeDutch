@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Zinnen Oefenen</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: black;
+    color: white;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    font-size: clamp(24px, 6vw, 72px);
+    line-height: 1.4;
+    padding: 5vw;
+    box-sizing: border-box;
+    user-select: none;
+  }
+
+  .controls {
+    position: fixed;
+    top: 16px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .controls-inner {
+    display: flex;
+    gap: 18px;
+    pointer-events: auto;
+    font-size: 14px;
+    opacity: 0.85;
+    align-items: center;
+  }
+
+  label, button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 14px;
+  }
+
+  input {
+    transform: scale(1.2);
+  }
+
+  button {
+    cursor: pointer;
+    opacity: 0.9;
+  }
+
+  #sentence span.active {
+    color: #ffe066;
+  }
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <div class="controls-inner">
+    <label>
+      <input type="checkbox" id="randomToggle">
+      Random
+    </label>
+    <label>
+      <input type="checkbox" id="speakToggle">
+      🔊 Speak
+    </label>
+    <button id="repeatBtn">↻ Repeat</button>
+  </div>
+</div>
+
+<div id="sentence"></div>
+
+<script>
+const sentences = [
+"Ik begrijp uw zorg.",
+"Ik wil graag rustig uitleggen hoe mijn situatie nu is.",
+"Op advies van mijn arts werk ik momenteel niet.",
+"Dit is een tijdelijke situatie.",
+"Ik gebruik deze periode om mijn Nederlands actief te verbeteren.",
+"Ik leer dagelijks en heb een vaste planning.",
+"Ik kan mijn inzet en voortgang aantonen.",
+"Een lening zou mijn situatie financieel kwetsbaar maken.",
+"Ik sta open voor een alternatief zonder financiële verplichtingen.",
+"Ik hoop dat u ziet dat ik mijn verantwoordelijkheid serieus neem.",
+"Ik begrijp uw vraag.",
+"Ik wil rustig uitleggen hoe mijn situatie nu is.",
+"Mijn arts heeft gezegd dat ik nu niet kan werken.",
+"Dit is tijdelijk.",
+"Ik gebruik deze tijd om Nederlands te leren.",
+"Ik leer elke dag en heb een vaste planning.",
+"Ik kan laten zien wat ik doe en leer.",
+"Een lening geeft mij nu te veel problemen.",
+"Ik wil graag een andere oplossing bespreken.",
+"Ik neem mijn verantwoordelijkheid serieus."
+];
+
+let ordered = [...sentences];
+let current = ordered;
+let index = 0;
+
+const el = document.getElementById("sentence");
+const randomToggle = document.getElementById("randomToggle");
+const speakToggle = document.getElementById("speakToggle");
+const repeatBtn = document.getElementById("repeatBtn");
+
+/* ---------- Speech ---------- */
+let voices = [];
+speechSynthesis.onvoiceschanged = () => {
+  voices = speechSynthesis.getVoices();
+};
+
+function renderSentence(text, activeIndex = -1) {
+  const words = text.split(" ");
+  el.innerHTML = words.map((w, i) =>
+    `<span class="${i === activeIndex ? "active" : ""}">${w}</span>`
+  ).join(" ");
+}
+
+function speak(text) {
+  if (!speakToggle.checked || !window.speechSynthesis) return;
+
+  speechSynthesis.cancel();
+  renderSentence(text);
+
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "nl-NL";
+  utter.rate = 0.85;   // learner speed
+  utter.pitch = 1.0;
+
+  const dutch = voices.find(v => v.lang.startsWith("nl"));
+  if (dutch) utter.voice = dutch;
+
+  let wordIndex = 0;
+
+  utter.onboundary = e => {
+    if (e.name === "word") {
+      renderSentence(text, wordIndex);
+      wordIndex++;
+    }
+  };
+
+  utter.onend = () => renderSentence(text);
+
+  speechSynthesis.speak(utter);
+}
+
+/* ---------- Logic ---------- */
+function shuffle(arr) {
+  return arr.map(v => ({ v, r: Math.random() }))
+            .sort((a, b) => a.r - b.r)
+            .map(o => o.v);
+}
+
+randomToggle.addEventListener("change", () => {
+  index = 0;
+  current = randomToggle.checked ? shuffle(sentences) : ordered;
+  show();
+});
+
+repeatBtn.addEventListener("click", () => {
+  speak(current[index]);
+});
+
+function show() {
+  renderSentence(current[index]);
+  speak(current[index]);
+}
+
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowRight") index = Math.min(index + 1, current.length - 1);
+  if (e.key === "ArrowLeft") index = Math.max(index - 1, 0);
+  show();
+});
+
+/* ---------- Touch ---------- */
+let startX = 0;
+document.addEventListener("touchstart", e => {
+  startX = e.changedTouches[0].clientX;
+}, { passive: true });
+
+document.addEventListener("touchend", e => {
+  const diff = e.changedTouches[0].clientX - startX;
+  if (Math.abs(diff) > 50) {
+    if (diff < 0) index = Math.min(index + 1, current.length - 1);
+    if (diff > 0) index = Math.max(index - 1, 0);
+    show();
+  }
+}, { passive: true });
+
+show();
+</script>
+
+</body>
+</html>
