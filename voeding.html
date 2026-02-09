@@ -17,6 +17,7 @@
 
   body {
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
@@ -25,6 +26,7 @@
     padding: 5vw;
     box-sizing: border-box;
     user-select: none;
+    gap: 20px; /* Reduced gap slightly */
   }
 
   .controls {
@@ -44,7 +46,7 @@
     font-size: 14px;
     opacity: 0.85;
     align-items: center;
-    background: rgba(0, 0, 0, 0.5); /* Optional: improves readability if text overlaps */
+    background: rgba(0, 0, 0, 0.5);
     padding: 5px 10px;
     border-radius: 20px;
   }
@@ -59,30 +61,51 @@
     font-size: 14px;
   }
 
-  /* Home Icon Specific Styles */
   .home-link {
     text-decoration: none;
     cursor: pointer;
-    padding-right: 4px; /* Slight extra spacing after home icon */
+    padding-right: 4px;
   }
-  
+   
   .home-link svg {
     stroke: white;
     width: 20px;
     height: 20px;
   }
 
-  input {
-    transform: scale(1.2);
-  }
-
-  button {
-    cursor: pointer;
-    opacity: 0.9;
-  }
+  input { transform: scale(1.2); }
+  button { cursor: pointer; opacity: 0.9; }
 
   #sentence span.active {
     color: #ffe066;
+  }
+
+  /* --- UPDATED IMAGE STYLES --- */
+  .image-mask {
+    /* Reduced size by approx 33% */
+    width: clamp(100px, 20vw, 200px); 
+    height: clamp(100px, 20vw, 200px);
+    
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid #444; /* Slightly thinner border */
+    background-color: #222;
+    box-shadow: 0 0 15px rgba(255,255,255,0.05);
+    flex-shrink: 0;
+    transition: transform 0.2s;
+  }
+
+  .image-mask img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    opacity: 0; 
+    transition: opacity 0.3s ease-in;
+  }
+  
+  .image-mask img.loaded {
+    opacity: 1;
   }
 </style>
 </head>
@@ -96,17 +119,14 @@
         <polyline points="9 22 9 12 15 12 15 22"></polyline>
       </svg>
     </a>
-
-    <label>
-      <input type="checkbox" id="randomToggle">
-      Random
-    </label>
-    <label>
-      <input type="checkbox" id="speakToggle">
-      🔊 Speak
-    </label>
+    <label><input type="checkbox" id="randomToggle"> Random</label>
+    <label><input type="checkbox" id="speakToggle"> 🔊 Speak</label>
     <button id="repeatBtn">↻ Repeat</button>
   </div>
+</div>
+
+<div class="image-mask">
+  <img id="vocabImage" src="" alt="Vocabulary Image" />
 </div>
 
 <div id="sentence"></div>
@@ -121,6 +141,7 @@ let current = ordered;
 let index = 0;
 
 const el = document.getElementById("sentence");
+const imgEl = document.getElementById("vocabImage");
 const randomToggle = document.getElementById("randomToggle");
 const speakToggle = document.getElementById("speakToggle");
 const repeatBtn = document.getElementById("repeatBtn");
@@ -146,7 +167,7 @@ function speak(text) {
 
   const utter = new SpeechSynthesisUtterance(text);
   utter.lang = "nl-NL";
-  utter.rate = 0.85;   // learner speed
+  utter.rate = 0.85; 
   utter.pitch = 1.0;
 
   const dutch = voices.find(v => v.lang.startsWith("nl"));
@@ -162,8 +183,30 @@ function speak(text) {
   };
 
   utter.onend = () => renderSentence(text);
-
   speechSynthesis.speak(utter);
+}
+
+/* ---------- Image Logic (Updated) ---------- */
+function updateImage(text) {
+  imgEl.classList.remove("loaded");
+  
+  // Clean up text: "Peer / Peren" -> "Peer"
+  let cleanTerm = text.split('/')[0].split('(')[0].trim();
+  
+  // Use Bing Images Thumbnail API
+  // This is highly reliable for Dutch terms (e.g., searches for "Vla") 
+  // and does not require an API key for basic embedding.
+  // We append " eten" (food) to ensure we get food results, not random brands.
+  const encoded = encodeURIComponent(cleanTerm + " eten");
+  
+  // w=300, h=300 (Width/Height), c=7 (Smart Crop)
+  const url = `https://tse2.mm.bing.net/th?q=${encoded}&w=300&h=300&c=7&rs=1`;
+  
+  imgEl.src = url;
+  
+  imgEl.onload = () => {
+    imgEl.classList.add("loaded");
+  };
 }
 
 /* ---------- Logic ---------- */
@@ -184,8 +227,10 @@ repeatBtn.addEventListener("click", () => {
 });
 
 function show() {
-  renderSentence(current[index]);
-  speak(current[index]);
+  const text = current[index];
+  renderSentence(text);
+  updateImage(text);
+  speak(text);
 }
 
 document.addEventListener("keydown", e => {
