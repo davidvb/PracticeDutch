@@ -2,212 +2,52 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Zinnen Oefenen</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Practice Dutch Links</title>
 <style>
   html, body {
     margin: 0;
     padding: 0;
+    width: 100%;
     height: 100%;
+  }
+  body {
     background: black;
     color: white;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  }
-
-  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
-    font-size: clamp(24px, 6vw, 72px);
-    line-height: 1.4;
-    padding: 5vw;
+    padding: 20px;
     box-sizing: border-box;
-    user-select: none;
   }
-
-  .controls {
-    position: fixed;
-    top: 16px;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    pointer-events: none;
-  }
-
-  .controls-inner {
-    display: flex;
-    gap: 18px;
-    pointer-events: auto;
-    font-size: 14px;
-    opacity: 0.85;
-    align-items: center;
-  }
-
-  label, button {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: none;
-    border: none;
+  a {
     color: white;
-    font-size: 14px;
+    text-decoration: none;
+    font-size: 1.4rem;
+    margin: 12px 0;
+    padding: 12px 18px;
+    border: 1px solid white;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 400px;
   }
-
-  input {
-    transform: scale(1.2);
-  }
-
-  button {
-    cursor: pointer;
-    opacity: 0.9;
-  }
-
-  #sentence span.active {
-    color: #ffe066;
+  a:hover {
+    background: #222;
   }
 </style>
 </head>
 <body>
 
-<div class="controls">
-  <div class="controls-inner">
-    <label>
-      <input type="checkbox" id="randomToggle">
-      Random
-    </label>
-    <label>
-      <input type="checkbox" id="speakToggle">
-      🔊 Speak
-    </label>
-    <button id="repeatBtn">↻ Repeat</button>
-  </div>
-</div>
+<a href="https://davidvb.github.io/PracticeDutch/Zinnen_Oefenen_V3.html" target="_blank">Zinnen Oefenen</a>
 
-<div id="sentence"></div>
+<a href="https://davidvb.github.io/PracticeDutch/B2woordenlijst.html" target="_blank">B2 Woordenlijst</a>
 
-<script>
-const sentences = [
-  "Goedemorgen, welkom terug.",
-  "Goed je weer te zien.",
-  "Dank je wel. Het is ook goed jou weer te zien.",
-  "Hoe gaat het met je Nederlands?",
-  "Beter! Sinds november ga ik twee keer per week naar het Taalcafé.",
-  "Daar oefenen we Nederlands.",
-  "Thuis leer ik Nederlands met lesboeken, met hulp van mijn man.",
-  "Sinds november.",
-  "Vanaf volgende week",
-  "Uit welk land kom je ook alweer??",
-  "Uit Mexico.",
-  "Wat is je geboortedatum?",
-  "Mijn geboortedatum is 24 september, negentien achtentachtig",
-  "Hoe lang ben je al in Nederland?",
-  "Sinds november tweeduizend vierentwintig, dus anderhalf jaar.",
-  "Hoe gaat het met je dochter?",
-  "Goed!",
-  "Hoe oud is ze nu?",
-  "Vijf jaar.",
-  "Vind ze het leuk op school?",
-  "Ja, ze vind het erg leuk op school.",
-  "Ze heeft veel vriendjes."
-];
+<a href="https://davidvb.github.io/PracticeDutch/B2kernzinnen.html" target="_blank">B2 Kernzinnen</a>
 
-let ordered = [...sentences];
-let current = ordered;
-let index = 0;
-
-const el = document.getElementById("sentence");
-const randomToggle = document.getElementById("randomToggle");
-const speakToggle = document.getElementById("speakToggle");
-const repeatBtn = document.getElementById("repeatBtn");
-
-/* ---------- Speech ---------- */
-let voices = [];
-speechSynthesis.onvoiceschanged = () => {
-  voices = speechSynthesis.getVoices();
-};
-
-function renderSentence(text, activeIndex = -1) {
-  const words = text.split(" ");
-  el.innerHTML = words.map((w, i) =>
-    `<span class="${i === activeIndex ? "active" : ""}">${w}</span>`
-  ).join(" ");
-}
-
-function speak(text) {
-  if (!speakToggle.checked || !window.speechSynthesis) return;
-
-  speechSynthesis.cancel();
-  renderSentence(text);
-
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = "nl-NL";
-  utter.rate = 0.85;   // learner speed
-  utter.pitch = 1.0;
-
-  const dutch = voices.find(v => v.lang.startsWith("nl"));
-  if (dutch) utter.voice = dutch;
-
-  let wordIndex = 0;
-
-  utter.onboundary = e => {
-    if (e.name === "word") {
-      renderSentence(text, wordIndex);
-      wordIndex++;
-    }
-  };
-
-  utter.onend = () => renderSentence(text);
-
-  speechSynthesis.speak(utter);
-}
-
-/* ---------- Logic ---------- */
-function shuffle(arr) {
-  return arr.map(v => ({ v, r: Math.random() }))
-            .sort((a, b) => a.r - b.r)
-            .map(o => o.v);
-}
-
-randomToggle.addEventListener("change", () => {
-  index = 0;
-  current = randomToggle.checked ? shuffle(sentences) : ordered;
-  show();
-});
-
-repeatBtn.addEventListener("click", () => {
-  speak(current[index]);
-});
-
-function show() {
-  renderSentence(current[index]);
-  speak(current[index]);
-}
-
-document.addEventListener("keydown", e => {
-  if (e.key === "ArrowRight") index = Math.min(index + 1, current.length - 1);
-  if (e.key === "ArrowLeft") index = Math.max(index - 1, 0);
-  show();
-});
-
-/* ---------- Touch ---------- */
-let startX = 0;
-document.addEventListener("touchstart", e => {
-  startX = e.changedTouches[0].clientX;
-}, { passive: true });
-
-document.addEventListener("touchend", e => {
-  const diff = e.changedTouches[0].clientX - startX;
-  if (Math.abs(diff) > 50) {
-    if (diff < 0) index = Math.min(index + 1, current.length - 1);
-    if (diff > 0) index = Math.max(index - 1, 0);
-    show();
-  }
-}, { passive: true });
-
-show();
-</script>
+<a href="https://davidvb.github.io/PracticeDutch/noodzinnen.html" target="_blank">Noodzinnen</a>
 
 </body>
 </html>
